@@ -36,18 +36,33 @@ Think of it like a small virtual team with three specialized roles:
 Agentaflow uses a "feedback loop." It won't stop until the answer is good, but it has a built-in safety switch so it doesn't get stuck in an endless loop forever.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#326CE5', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f4f4f4'}}}%%
 flowchart TD
-    A([User Gives a Goal]) -->|Passes Goal| B[📋 Planner makes a To-Do List]
+    classDef mainGoal fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef planner fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+    classDef executor fill:#fff3e0,stroke:#fb8c00,stroke-width:2px;
+    classDef verifier fill:#e8f5e9,stroke:#43a047,stroke-width:2px;
+    classDef tool fill:#eceff1,stroke:#607d8b,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef loop fill:#ffebee,stroke:#e53935,stroke-width:2px;
+    classDef final fill:#dcedc8,stroke:#689f38,stroke-width:3px;
+
+    A([🎯 User Gives a Goal]):::mainGoal -->|Passes Goal| B[📋 Planner Agent<br>Creates a To-Do List]:::planner
     
-    B -->|Passes To-Do List| C[⚡ Executor completes tasks using Web Search]
+    subgraph Execution Engine
+        B -->|Passes To-Do List| C[⚡ Executor Agent<br>Completes tasks]:::executor
+        C -.-> |Queries| DDG[[🌐 DuckDuckGo Search]]:::tool
+        DDG -.-> |Context| C
+    end
     
-    C -->|Passes Draft Report| D{🔍 Verifier grades the quality}
+    C -->|Passes Draft Report| D{🔍 Verifier Agent<br>Grades the quality}:::verifier
     
-    D -- "Score is too low" --> E[Writes critical feedback]
-    E -. "Goes back to try again" .-> C
+    subgraph Self-Correction Feedback Loop
+        D -- "Score is too low<br>(Rejects)" --> E[✍️ Writes critical feedback<br>and critique]:::loop
+        E -. "Goes back to try again<br>Increments Iteration count" .-> C
+    end
     
-    D -- "Score is Great!" --> F([Final Output Delivered to User])
-    D -- "Tried 3 times already" --> F
+    D -- "Score is Great!<br>(Approves)" --> F([🎉 Final Output Delivered]):::final
+    D -- "Max 3 Tries Reached<br>(Force Approves)" --> F
 ```
 
 ---

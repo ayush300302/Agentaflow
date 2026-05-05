@@ -21,12 +21,35 @@ It takes a complex goal, breaks it down into actionable tasks, executes them (wi
 Agentaflow uses a state graph defined with `langgraph`.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#326CE5', 'edgeLabelBackground':'#e8e8e8', 'tertiaryColor': '#F0F0F0'}}}%%
 graph TD
-    START((START)) --> Planner[Planner Agent]
-    Planner --> Executor[Executor Agent]
-    Executor --> Verifier[Verifier Agent]
-    Verifier -- Approved / Max Iterations --> END((END))
-    Verifier -- Rejected (Critique) --> Executor
+    classDef agent fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    classDef state fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef tool fill:#fff3e0,stroke:#f57c00,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef loop fill:#ffebee,stroke:#c62828,stroke-width:2px;
+
+    User([👤 User Input: Goal]) --> State1[(📝 AgentState<br>Initialize Goal)]
+    State1 --> Planner
+    
+    subgraph Core LangGraph Architecture
+        Planner[🧠 Planner Agent<br/><i>Breaks goal into tasks</i>]:::agent
+        Executor[⚡ Executor Agent<br/><i>Processes tasks</i>]:::agent
+        Verifier[🔍 Verifier Agent<br/><i>Scores Quality</i>]:::agent
+        
+        Planner -- "Updates State: Tasks[]" --> Executor
+        
+        Executor -.-> SearchTool[[DuckDuckGo Search Tool]]:::tool
+        SearchTool -.-> Executor
+        
+        Executor -- "Updates State: Results[]" --> Verifier
+        
+        Verifier -- "Condition: Approved = False<br/>(Max 3 Iterations)" --> Feedback[🔄 Self-Correction Loop<br/><i>Generates Critique</i>]:::loop
+        Feedback -. "Updates State: Critique" .-> Executor
+    end
+    
+    Verifier -- "Condition: Approved = True<br/>OR Max Iterations Hit" --> FinalOutput([🎯 Final Output Delivered])
+    
+    class User,FinalOutput state;
 ```
 
 ## 🚀 Getting Started
